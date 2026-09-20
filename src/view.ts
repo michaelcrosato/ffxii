@@ -18,32 +18,40 @@ export class Battlefield {
   private mergeGeometry?:typeof import('three/addons/utils/BufferGeometryUtils.js').mergeGeometries;
   private bursts:{mesh:Three.Group;start:number;color:string;up:boolean}[]=[];
   private settings:Campaign['settings'];private hoverKey='';private pointers=new Map<number,{x:number;y:number}>();private down?:{x:number;y:number};private pinch=0;
+  private softwareRenderer=false;
+  private lowQuality(){return this.settings.quality==='low'||(this.settings.quality==='auto'&&this.softwareRenderer);}
+  get qualityMode(){return this.lowQuality()?'low':'full';}
+  private detectSoftware(gl:WebGLRenderingContext|WebGL2RenderingContext){const info=gl.getExtension('WEBGL_debug_renderer_info');if(info)this.softwareRenderer=/swiftshader|llvmpipe|software|softpipe/i.test(String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)));}
   onPick:(pos:Pos)=>void=()=>{};onHover:(pos:Pos|null)=>void=()=>{};
   constructor(private host:HTMLElement,private labelHost:HTMLElement,settings:Campaign['settings']){this.settings=settings;}
   async init(){
     const requested=new URLSearchParams(location.search).get('renderer');
+    // Avoid constructing a WebGL2 backend at all on WebGL1-only browsers.
+    // Its internal extension initialization otherwise produces an unhandled error.
+    const probe=document.createElement('canvas'),webgl2=probe.getContext('webgl2');
+    const supportsWebGL2=!!webgl2;if(webgl2)this.detectSoftware(webgl2);webgl2?.getExtension('WEBGL_lose_context')?.loseContext();
     const modern=async(forceWebGL:boolean)=>{
       const module=await import('three/webgpu');const r=new module.WebGPURenderer({antialias:true,alpha:true,forceWebGL,powerPreference:'high-performance'});
       try{await r.init();}catch(e){r.dispose();throw e;}
       this.T=module as unknown as typeof Three;this.renderer=r;this.mode=(r.backend as unknown as {isWebGPUBackend?:boolean}).isWebGPUBackend?'WebGPU':'WebGL2';
     };
-    try{if(requested==='webgl1')throw new Error('Compatibility requested');await modern(requested==='webgl2');}
+    try{if(requested==='webgl1'||(!navigator.gpu&&!supportsWebGL2)||(requested==='webgl2'&&!supportsWebGL2))throw new Error('Compatibility required');await modern(requested==='webgl2');}
     catch {
-      try{if(requested==='webgl1')throw new Error('Compatibility requested');await modern(true);}
-      catch{const T=await import('three-legacy');const canvas=document.createElement('canvas');const context=canvas.getContext('webgl',{alpha:true,antialias:true});if(!context)throw new Error('This browser could not start WebGPU or WebGL. Please enable hardware acceleration and reload.');this.T=T;this.renderer=new T.WebGLRenderer({canvas,context,antialias:true,alpha:true});this.mode='WebGL1';}
+      try{if(requested==='webgl1'||!supportsWebGL2)throw new Error('Compatibility required');await modern(true);}
+      catch{const T=await import('three-legacy');const canvas=document.createElement('canvas');const context=canvas.getContext('webgl',{alpha:true,antialias:true});if(!context)throw new Error('This browser could not start WebGPU or WebGL. Please enable hardware acceleration and reload.');this.detectSoftware(context);this.T=T;this.renderer=new T.WebGLRenderer({canvas,context,antialias:true,alpha:true});this.mode='WebGL1';}
     }
     const T=this.T;this.renderer.setClearColor(0x1c262d,0);this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.25;
-    this.renderer.shadowMap.enabled=this.settings.quality!=='low';this.renderer.shadowMap.type=this.mode==='WebGL1'?T.PCFSoftShadowMap:T.PCFShadowMap;
+    this.renderer.shadowMap.enabled=!this.lowQuality();this.renderer.shadowMap.type=this.mode==='WebGL1'?T.PCFSoftShadowMap:T.PCFShadowMap;
     this.host.prepend(this.renderer.domElement);this.renderer.domElement.setAttribute('aria-label','Interactive isometric battlefield. Select a tile to move or target.');
     this.scene=new T.Scene();this.camera=new T.OrthographicCamera(-9,9,7,-7,.1,100);
     this.environment=new T.Group();this.figures=new T.Group();this.overlays=new T.Group();this.scene.add(this.environment,this.figures,this.overlays);
     this.scene.add(new T.HemisphereLight(0xc5d8e6,0x534735,2.8));
-    const sun=new T.DirectionalLight(0xffdfac,4);sun.position.set(-5,14,7);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-12;sun.shadow.camera.right=12;sun.shadow.camera.top=12;sun.shadow.camera.bottom=-12;sun.shadow.normalBias=.05;sun.shadow.bias=-.0002;this.scene.add(sun);
+    const sun=new T.DirectionalLight(0xffdfac,4);sun.position.set(-5,14,7);sun.castShadow=true;const shadowSize=innerWidth<800?1024:2048;sun.shadow.mapSize.set(shadowSize,shadowSize);sun.shadow.camera.left=-12;sun.shadow.camera.right=12;sun.shadow.camera.top=12;sun.shadow.camera.bottom=-12;sun.shadow.normalBias=.05;sun.shadow.bias=-.0002;this.scene.add(sun);
     const rim=new T.DirectionalLight(0x9cc8e4,1.4);rim.position.set(7,8,-7);this.scene.add(rim);
     this.marker=new T.Mesh(new T.RingGeometry(.42,.48,4),new T.MeshBasicMaterial({color:0xf2d69a,transparent:true,opacity:.9,side:T.DoubleSide,depthWrite:false}));this.marker.rotation.x=-Math.PI/2;this.marker.rotation.z=Math.PI/4;this.scene.add(this.marker);
     const positions=new Float32Array(70*3);for(let i=0;i<70;i++){positions[i*3]=Math.sin(i*137.5)*8;positions[i*3+1]=.5+(i%17)*.26;positions[i*3+2]=Math.cos(i*54.3)*8;}
     const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(positions,3));this.particles=new T.Points(g,new T.PointsMaterial({color:0xf8d49a,size:.026,transparent:true,opacity:.55,depthWrite:false}));this.scene.add(this.particles);
-    if(this.mode==='WebGPU'&&this.settings.quality!=='low'&&(innerWidth>=900||this.settings.quality==='high')){
+    if(this.mode==='WebGPU'&&!this.lowQuality()&&(innerWidth>=900||this.settings.quality==='high')){
       const [{RenderPipeline},{pass,vec4},{bloom}]=await Promise.all([import('three/webgpu'),import('three/tsl'),import('three/addons/tsl/display/BloomNode.js')]);
       const pipe=new RenderPipeline(this.renderer as WebGPURenderer),scenePass=pass(this.scene,this.camera),color=scenePass.getTextureNode('output');pipe.outputNode=vec4(color.rgb.add(bloom(color,.14,.3,1.4).rgb),color.a);this.renderScene=()=>pipe.render();
     }
@@ -170,7 +178,7 @@ export class Battlefield {
   setZoom(delta:number){this.zoom=Math.max(.72,Math.min(1.6,this.zoom+delta));this.resize();}
   updateSettings(settings:Campaign['settings']){this.settings=settings;this.resize();}
   private resize(){if(!this.camera)return;const w=this.host.clientWidth,h=this.host.clientHeight;if(!w||!h)return;
-    const dpr=this.settings.quality==='low'?1:Math.min(devicePixelRatio,innerWidth<800?1.5:2);this.renderer.setPixelRatio(dpr);this.renderer.setSize(w,h);
+    const dpr=this.lowQuality()?1:Math.min(devicePixelRatio,innerWidth<800?1.5:2);this.renderer.setPixelRatio(dpr);this.renderer.setSize(w,h);
     const aspect=w/h;const half=Math.max(6.7,8.5/aspect)/this.zoom;this.camera.left=-half*aspect;this.camera.right=half*aspect;this.camera.top=half;this.camera.bottom=-half;this.camera.updateProjectionMatrix();
   }
   project(p:Pos,height=1.4){const v=new this.T.Vector3(p.x-4.5,this.height(p)+height,p.z-4.5).project(this.camera);return{x:(v.x+1)*this.host.clientWidth/2,y:(1-v.y)*this.host.clientHeight/2};}
@@ -187,7 +195,7 @@ export class Battlefield {
   }
   private loop=()=>{
     this.frame=requestAnimationFrame(this.loop);if(document.hidden)return;
-    const now=performance.now();if(this.settings.quality==='low'&&now-this.frameTime<32)return;this.frameTime=now;
+    const now=performance.now();if(this.lowQuality()&&now-this.frameTime<32)return;this.frameTime=now;
     this.angle+=(this.targetAngle-this.angle)*(this.settings.reducedMotion?1:.12);this.camera.position.set(Math.sin(this.angle)*16,14,Math.cos(this.angle)*16);this.camera.lookAt(0,.8,0);this.camera.updateMatrixWorld();
     for(const anim of this.animations){const f=Math.min(1,(now-anim.start)/anim.duration),part=f*(anim.path.length-1),idx=Math.min(anim.path.length-2,Math.floor(part)),a=anim.path[idx],b=anim.path[idx+1],t=part-idx;const m=this.unitMeshes.get(anim.id)!;m.position.set(a.x+(b.x-a.x)*t-4.5,this.height(a)+(this.height(b)-this.height(a))*t+Math.sin(t*Math.PI)*.12,a.z+(b.z-a.z)*t-4.5);}
     this.animations=this.animations.filter(a=>now-a.start<a.duration);

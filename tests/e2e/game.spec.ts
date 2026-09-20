@@ -34,6 +34,10 @@ for(const renderer of ['webgl2','webgl1'])test(`${renderer} compatibility render
  const errors=trackErrors(page);await page.goto(`/?renderer=${renderer}`);await ready(page);expect((await state(page)).renderer.toLowerCase()).toBe(renderer);await page.getByRole('button',{name:'Begin battle',exact:true}).click();await page.getByRole('button',{name:'Skip story'}).click();await page.locator('[data-action="move"]').click();await clickTile(page,{x:3,z:7});await page.getByRole('button',{name:'Move here'}).click();await idle(page);expect((await state(page)).battle.moved).toBe(true);await page.screenshot({path:`test-results/${renderer}.png`});expect(errors).toEqual([]);
 });
 
+for(const legacy of [false,true])test(`automatic fallback with ${legacy?'only WebGL1':'no WebGPU'} available`,async({page})=>{
+ const errors=trackErrors(page);await page.addInitScript(legacy=>{Object.defineProperty(navigator,'gpu',{value:undefined,configurable:true});if(legacy){const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(this:HTMLCanvasElement,type:string,...args:any[]){return type==='webgl2'?null:original.call(this,type,...args);} as typeof original;}},legacy);await page.goto('/');await ready(page);expect((await state(page)).renderer).toBe(legacy?'WebGL1':'WebGL2');await expect(page.getByRole('button',{name:'Begin battle',exact:true})).toBeEnabled();expect(errors).toEqual([]);
+});
+
 test('complete opening battle through visible controls, claim rewards, and unlock the next chapter',async({page})=>{
  test.setTimeout(240000);const errors=trackErrors(page);await start(page);await configureFast(page);
  for(let turns=0;turns<100;turns++){

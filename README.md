@@ -58,7 +58,7 @@ Mobile battles keep the board visible above an independently scrollable command 
 - **Fallback:** the same current renderer’s WebGL2 backend.
 - **Compatibility:** separately lazy-loaded Three.js r162 `WebGLRenderer` with an explicitly requested **WebGL1** context. Modern Three.js removed WebGL1 in r163; no modern-only shader code runs on this path.
 - Low-poly procedural geometry, batched static meshes, orthographic camera, warm/cool lighting, real-time shadows, ACES tone mapping, MSAA, ambient motes, animated figurines, and a TSL bloom pipeline on the native WebGPU desktop/high-quality path.
-- Automatic mobile pixel-ratio cap; low quality reduces resolution and renders at roughly 30 Hz. Paused rendering when the page is hidden. Local, bundled fonts and original synthesized audio.
+- Automatic mobile pixel-ratio cap and smaller mobile shadow maps. Software GPUs automatically use the low-quality profile: no dynamic shadows or bloom, capped resolution, and roughly 30 Hz rendering. High quality remains selectable. Rendering pauses when the page is hidden. Local, bundled fonts and original synthesized audio.
 
 Force a fallback for testing:
 

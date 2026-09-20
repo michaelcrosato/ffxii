@@ -220,5 +220,5 @@ try{
   await view.init();await view.setBattle(battle);ready=true;el('scene-loading').remove();view.renderer.domElement.tabIndex=0;render();
   if(loaded.notice)toast(loaded.notice);if(playing()){if(battle.state.outcome)showResults();else if(battle.active.team==='enemy')void runEnemies();}
   // Read-only observability for renderer and browser smoke checks; no gameplay bypasses.
-  Object.defineProperty(window,'__CINDERS__',{value:{get state(){return structuredClone({campaign,battle:battle.state,mode,busy,renderer:view.mode});},project:(p:Pos)=>view.project(p,0)},writable:false});
+  Object.defineProperty(window,'__CINDERS__',{value:{get state(){return structuredClone({campaign,battle:battle.state,mode,busy,renderer:view.mode,renderQuality:view.qualityMode});},project:(p:Pos)=>view.project(p,0)},writable:false});
 }catch(error){el('scene-loading').innerHTML=`<span class="loading-star">${icon('shield')}</span><b>The stage needs a little help.</b><p>${esc(error instanceof Error?error.message:'Please reload with hardware acceleration enabled.')}</p><button class="primary" id="reload">Try again</button>`;el('reload').onclick=()=>location.reload();console.error(error);}

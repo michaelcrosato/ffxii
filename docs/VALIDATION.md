@@ -5,12 +5,14 @@ Verified September 20, 2026 on Windows with Node 24.20.0, pnpm 12.5.1, and insta
 | Check | Result | Scope |
 | --- | --- | --- |
 | `pnpm test` | 24 passed | Terrain/spawns, movement, action costs, facing, elevation, line of sight, charging, friendly fire, revival, inventory, status duration, AI legality, saves, gear, secondary jobs, CT forecasts, and campaign completion |
-| `pnpm test:e2e` | 10 passed | Actual visible browser controls and touch/keyboard interactions |
+| `pnpm test:e2e` | 12 passed | Actual visible browser controls and touch/keyboard interactions |
 | `pnpm build` | Passed | Strict TypeScript check and Vite production bundle |
 | Production preview | Passed | Compiled assets, native WebGPU, complete scene, enabled controls, keyboard movement, no console errors |
 | Native WebGPU | Passed | Actual initialized backend reported WebGPU; screenshot visually reviewed |
 | Forced WebGL2 | Passed | Actual WebGL2 backend; scene and legal movement through UI |
 | Forced WebGL1 | Passed | Actual WebGL1 context using isolated r162 renderer; scene and legal movement through UI |
+| Automatic fallbacks | Passed | Missing WebGPU selects WebGL2; WebGL1-only browsers initialize without errors |
+| Software GPU quality | Passed | SwiftShader detected automatically; low profile selected and screenshot completed in 523 ms |
 
 ## Gameplay evidence
 
@@ -24,12 +26,14 @@ The browser walkthrough separately plays the entire opening battle by clicking t
 2. 393 × 852 touch viewport, grid movement, undo, Rally targeting, and an active-turn save/resume.
 3. WebGL2 fallback scene and movement.
 4. WebGL1 fallback scene and movement.
-5. Full opening battle, victory, reward claim, and chapter unlock through visible controls.
-6. Defeat, retry with original supplies, and retreat without unearned rewards.
-7. Invalid-save recovery, field guide, and difficulty settings.
-8. All five scenes, travel, validated save import, final ending, reward claim, and save export.
-9. 852 × 393 landscape touch layout without document overflow.
-10. Keyboard movement and facing while focus starts on a navigation control.
+5. Automatic WebGL2 fallback when WebGPU is unavailable.
+6. Automatic WebGL1 fallback when WebGPU and WebGL2 are unavailable.
+7. Full opening battle, victory, reward claim, and chapter unlock through visible controls.
+8. Defeat, retry with original supplies, and retreat without unearned rewards.
+9. Invalid-save recovery, field guide, and difficulty settings.
+10. All five scenes, travel, validated save import, final ending, reward claim, and save export.
+11. 852 × 393 landscape touch layout without document overflow.
+12. Keyboard movement and facing while focus starts on a navigation control.
 
 Both phone orientations retain the battlefield and a separate scrollable command panel. Nameplates avoid one another and do not intercept movement selection. The final visual review includes the town, river, mobile layouts, fallback screenshots, and production bundle.
 
