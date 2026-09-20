@@ -100,4 +100,4 @@ See [validation results](docs/VALIDATION.md), [portrait mobile play](docs/screen
 
 This is an original tactical RPG built around a city-uprising sequence, not a reproduction of Final Fantasy Tactics’ copyrighted campaign or assets. The source game informs the tactical language: stacked terrain, small parties, jobs, facing, and charge time. See [research notes](docs/RESEARCH.md) for guide attribution and rendering references.
 
-Code and original project assets are available under the MIT license. Bundled dependencies and fonts retain their own licenses.
+Code and original project assets are available under the MIT license. Bundled dependencies and fonts retain their own licenses, copied into [public/licenses/](public/licenses/) and the production build.
