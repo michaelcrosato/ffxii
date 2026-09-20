@@ -1,0 +1,39 @@
+{
+  "name": "crown-and-cinders",
+  "version": "1.0.0",
+  "description": "An original low-poly tactical RPG inspired by Final Fantasy Tactics",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/engine.test.ts",
+    "test:e2e": "playwright test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.5.1",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@12.5.1",
+  "type": "module",
+  "dependencies": {
+    "@fontsource/cormorant-garamond": "^5.3.0",
+    "@fontsource/dm-sans": "^5.3.0",
+    "three": "0.186.0",
+    "three-legacy": "npm:three@0.162.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/three": "^0.186.0",
+    "agent-browser": "^0.38.1",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
+    "vite": "8.3.0"
+  }
+}
