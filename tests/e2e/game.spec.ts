@@ -39,7 +39,8 @@ for(const legacy of [false,true])test(`automatic fallback with ${legacy?'only We
 });
 
 test('complete opening battle through visible controls, claim rewards, and unlock the next chapter',async({page})=>{
- test.setTimeout(240000);const errors=trackErrors(page);await start(page);await configureFast(page);
+ // A hosted runner draws every frame with SwiftShader while executing hundreds of UI actions.
+ test.setTimeout(process.env.CI?600000:240000);const errors=trackErrors(page);await start(page);await configureFast(page);
  for(let turns=0;turns<100;turns++){
    await idle(page);const snapshot=await state(page);if(snapshot.battle.outcome)break;
    const b=new Battle(snapshot.battle),plan=chooseTactic(b);expect(b.active.team).toBe('ally');

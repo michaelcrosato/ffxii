@@ -18,7 +18,9 @@ Verified September 20, 2026 on Windows with Node 24.20.0, pnpm 12.5.1, and insta
 
 The engine’s complete-campaign test plays all five encounters through legal moves, abilities, item use, CT advancement, and enemy decisions. It earns XP/JP and rewards, purchases upgrades using earned crowns, trains by replaying the opening encounter when needed, and reaches `finished: true` with all five chapters cleared. No enemy health or victory flags are altered in that test. Defeats remain defeats; training and retries use the same public game rules.
 
-The browser walkthrough separately plays the entire opening battle by clicking the real Move, ability, target, facing, and confirmation controls, then claims rewards and verifies the next chapter, money, and level progression. Other browser tests render all five authored scenes and verify the final reward/ending flow from an imported, validated victory fixture. This distinguishes a full engine campaign from the full opening browser battle and ending integration test.
+The browser walkthrough separately plays the entire opening battle by clicking the real Move, ability, target, facing, and confirmation controls, then claims rewards and verifies the next chapter, money, and level progression. That walkthrough also passed with local SwiftShader software rendering in 57 seconds. Other browser tests render all five authored scenes and verify the final reward/ending flow from an imported, validated victory fixture. This distinguishes a full engine campaign from the full opening browser battle and ending integration test.
+
+Hosted Linux checks use software rendering. They receive longer total test budgets (three minutes per scenario, ten minutes for the full battle); individual UI actions retain a ten-second timeout. The same gameplay, rendering, save, and error assertions run locally and in CI.
 
 ## Browser coverage
 
